@@ -32,15 +32,18 @@ def move_file(filename):
 def git_upload():
     repo = "/home/ssws/GitSample/SSWS-RPi"
     print("Git Uploading...")
-    try:
-        subprocess.run(["git", "-C", repo, "add", "."], check=True)
-        subprocess.run(["git", "-C", repo, "status"])
-        subprocess.run(["git", "-C", repo, "commit", "-m", f"Auto upload {datetime.now()}"], check=False)
-        subprocess.run(["git", "-C", repo, "push"], check=True)
-        print("Git Upload Successful")
-    except Exception as e:
-        print(f"Git Upload Failed: {e}")
-    
+    for attempt in range(5):
+        try:
+            subprocess.run(["git", "-C", repo, "add", "."], check=True)
+            subprocess.run(["git", "-C", repo, "status"])
+            subprocess.run(["git", "-C", repo, "commit", "-m", f"Auto upload {datetime.now()}"], check=False)
+            subprocess.run(["git", "-C", repo, "push"], check=True)
+            print("Git Upload Successful")
+            return
+        except Exception as e:
+            print(f"Git Upload Attempt {attempt+1} Failed: {e}")
+            time.sleep(60)
+
 #Sending Email w/Attachments Code <-- GitHub uploads make this redundant
 fromaddr = "sswsrpi@gmail.com"
 frompass = "qmyb qlcx noqq oxgw"
