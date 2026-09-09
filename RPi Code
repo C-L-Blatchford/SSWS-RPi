@@ -87,10 +87,10 @@ def sendemail(filename):
             
                 last_email_hour = email_hour
                 print(f"Email with Attachment for {filename} SENT SUCCESSFULLY!")
-                move_file(filename)
-                git_upload()
             except Exception as e:
                 print(f"Email failed: {e}")
+            move_file(filename)
+            git_upload()
 
 #RPi Saving CSV Code
 rawfolder = "Arduino_Logs/Raw" # Change this when finished with Arduino
