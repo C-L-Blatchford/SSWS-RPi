@@ -25,7 +25,7 @@ jobs:
 
     - name: Run analysis
       run: |
-        python analysis/analyse.py
+        python analyse.py
 
     - name: Upload plots
       uses: actions/upload-artifact@v4
