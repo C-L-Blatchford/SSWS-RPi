@@ -1,3 +1,7 @@
+// Note: This is a saved copy of the code on the RPi
+//       Any changes to this code will not reflect on the RPi code.
+//       Additionally the Arduino does not know the exact dates so any plots from simulated Arduino data will not be representative.
+
 void setup() {
   Serial.begin(115200);
   while (!Serial) {}
