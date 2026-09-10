@@ -43,18 +43,27 @@ if len(df == 0):
 start_date = df["TIMESTAMP"].min().strftime("%Y-%m-%d")
 end_date = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
 
+latest_day = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
+day_df = df[df["TIMESTAMP"].dt.strftime("%Y-%m-%d") == latest_day]
+
 plt.figure(figsize=(12,6))
 plt.plot(df["TIMESTAMP"], df["Batt_Volt_Avg"])
 
 plt.title(
     f"Snowdon Weather Station Summary\n"
-    f"{start_date} to {end_date}"
+    f"{latest_day}"
+#    f"{start_date} to {end_date}"
 )
 
 plt.xlabel("Time")
 plt.ylabel("Battery Voltage (V)")
 plt.grid(True)
-plt.tight_layout()
-plt.savefig("daily_summary.png")
 
-print("Created daily_summary.png")
+plt.tight_layout()
+
+#plot_filename = "overall_summary.png"
+plot_filename = f"daily_summary_{latest_day}.png"
+plt.savefig(plot_filename)
+
+#print(f"Created overall_summary.png from {start_date} to {end_date}")
+print(f"Created {plot_filename}")
