@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob
+import matplotlib.dates as mdates
 
 # Find all average CSV files
 csv_files = sorted(glob.glob("ArduinoAverage_*.csv"))
@@ -43,17 +44,25 @@ if len(df) == 0:
 start_date = df["TIMESTAMP"].min().strftime("%Y-%m-%d")
 end_date = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
 
-latest_day = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
-day_df = df[df["TIMESTAMP"].dt.strftime("%Y-%m-%d") == latest_day]
+#latest_day = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
+#day_df = df[df["TIMESTAMP"].dt.strftime("%Y-%m-%d") == latest_day]
+latest_day = df["TIMESTAMP"].dt.date.max()
+day_df = df[df["TIMESTAMP"].dt.date == latest_day]
 
 plt.figure(figsize=(12,6))
-plt.plot(df["TIMESTAMP"], df["Batt_Volt_Avg"])
+#plt.plot(df["TIMESTAMP"], df["Batt_Volt_Avg"])
+day_df = day_df.sort_values("TIMESTAMP")
+plt.plot(day_df["TIMESTAMP"], day_df["Batt_Volt_Avg"], marker="o", linewidth=1)
 
 plt.title(
     f"Snowdon Weather Station Summary\n"
     f"{latest_day}"
 #    f"{start_date} to {end_date}"
 )
+
+ax = plt.gca()
+ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
 
 plt.xlabel("Time")
 plt.ylabel("Battery Voltage (V)")
