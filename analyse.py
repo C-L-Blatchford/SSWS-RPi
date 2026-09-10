@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import glob
 import matplotlib.dates as mdates
+import os
 
 # Find all average CSV files
 csv_files = sorted(glob.glob("ArduinoAverage_*.csv"))
@@ -61,7 +62,8 @@ plt.grid(True)
 
 plt.tight_layout()
 
+os.makedirs("Plots", exist_ok=True)
 plot_filename = f"daily_summary_{latest_day}.png"
-plt.savefig(plot_filename)
+plt.savefig(f"Plots/{plot_filename}")
 
 print(f"Created {plot_filename}")
