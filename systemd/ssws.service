@@ -1,0 +1,14 @@
+[Unit]
+Description=Snowdon Space Weather Station
+After=network.target
+
+[Service]
+User=ssws
+WorkingDirectory=/home/ssws
+ExecStart=/usr/bin/python3 /home/ssws/logger.py
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
