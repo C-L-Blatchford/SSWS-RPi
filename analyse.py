@@ -26,7 +26,19 @@ if not frames:
 df = pd.concat(frames, ignore_index=True)
 
 # Convert timestamps
-df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"])
+#df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"])    #<--CRASH
+df["TIMESTAMP"] = (df["TIMESTAMP"].astype(str).str.replace('"', '', regex=False)) #Clean
+df["TIMESTAMP"] = pd.to_datetime(df["TIMESTAMP"], format="%Y-%m-%d %H:%M:%S", errors="coerce") #Convert
+
+##
+df = df.dropna(subset=["TIMESTAMP"])
+if len(df) == 0:
+    raise Exception("No valid timestamps found")
+df["Batt_Volt_Avg"] = pd.to_numeric(df["Batt_Volt_Avg"], errors="coerce")
+df = df.dropna(subset=["Batt_Volt_Avg"])
+if len(df == 0):
+    raise Exception("No valid battery voltage data found")
+##
 
 start_date = df["TIMESTAMP"].min().strftime("%Y-%m-%d")
 end_date = df["TIMESTAMP"].max().strftime("%Y-%m-%d")
