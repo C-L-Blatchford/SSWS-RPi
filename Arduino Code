@@ -18,7 +18,7 @@ void loop() {
   
   sprintf(
     timestamp,
-    "2026-06-18 %02d:%02d:%02d",
+    "2026-09-10 %02d:%02d:%02d",
     hh,
     mm,
     ss
