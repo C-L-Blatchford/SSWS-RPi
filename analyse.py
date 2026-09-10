@@ -36,7 +36,7 @@ if len(df) == 0:
     raise Exception("No valid timestamps found")
 df["Batt_Volt_Avg"] = pd.to_numeric(df["Batt_Volt_Avg"], errors="coerce")
 df = df.dropna(subset=["Batt_Volt_Avg"])
-if len(df == 0):
+if len(df) == 0:
     raise Exception("No valid battery voltage data found")
 ##
 
