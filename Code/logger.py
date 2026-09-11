@@ -1,0 +1,206 @@
+#!/usr/bin/env python3
+#Saving Imports
+import serial
+import time
+import csv
+import os
+from datetime import datetime
+
+#Email/Moving Imports
+import smtplib
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+import shutil
+#import smtpfile
+import subprocess
+
+#Moving CSV file
+def move_file(filename):
+    destination_folder = "/home/ssws/GitSample/SSWS-RPi"
+    if os.path.exists(filename):
+        destination_path = os.path.join(destination_folder, os.path.basename(filename))
+        if not os.path.exists(destination_path):
+            shutil.move(filename, destination_path)
+            print(f"Moved: {filename}")
+#            subprocess.run(["/home/ssws/gitpush.sh"], check=False)
+
+#Git Upload
+def git_upload():
+    repo = "/home/ssws/GitSample/SSWS-RPi"
+    print("Git Uploading...")
+    for attempt in range(5):
+        try:
+            subprocess.run(["git", "-C", repo, "fetch", "origin"], check=True)
+            subprocess.run(["git", "-C", repo, "pull", "--rebase", "origin", "main"], check=True)
+
+            subprocess.run(["git", "-C", repo, "add", "."], check=True)
+#            subprocess.run(["git", "-C", repo, "status"])
+            subprocess.run(["git", "-C", repo, "commit", "-m", f"Auto upload {datetime.now()}"], check=False)
+
+            subprocess.run(["git", "-C", repo, "push"], check=True)
+            print("Git Upload Successful")
+            return
+        except Exception as e:
+            print(f"Git Upload Attempt {attempt+1} Failed: {e}")
+            time.sleep(60)
+
+#Sending Email w/Attachments Code <-- GitHub uploads make this redundant
+fromaddr = "sswsrpi@gmail.com"
+frompass = "qmyb qlcx noqq oxgw"
+toaddr = "gx23733@bristol.ac.uk" #Change this to Bristol address
+
+last_email_hour = None
+
+def sendemail(filename):
+    global last_email_hour
+    now = datetime.now()
+   
+    if now.minute == 59:
+        email_hour = now.strftime("%Y%m%d%H")
+        if email_hour != last_email_hour:
+            if not os.path.exists(filename):
+                print(f"{filename} not found")
+                return
+               
+            subject = now.strftime("Arduino CSV Attachment: %Y%m%d %H00") # Change this when finished with Arduino
+            recording_time = now.strftime("%H:00 to %H:59")
+
+            msg = MIMEMultipart()
+            msg['From'] = fromaddr
+            msg['To'] = toaddr
+            msg['Subject'] = f"ALERT: {subject}"
+            body = f'This is the csv for logs recorded and saved from {recording_time}.'
+            msg.attach(MIMEText(body, 'plain'))
+
+            with open(filename, "rb") as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload((attachment).read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', "attachment; filename= {}".format(filename))
+            msg.attach(part)
+
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(fromaddr, frompass)
+            text = msg.as_string()
+           
+            try:
+                server.sendmail(fromaddr, toaddr, text)
+                server.quit()
+           
+                last_email_hour = email_hour
+                print(f"Email with Attachment for {filename} SENT SUCCESSFULLY!")
+            except Exception as e:
+                print(f"Email failed: {e}")
+            move_file(filename)
+            git_upload()
+
+#RPi Saving CSV Code
+rawfolder = "Arduino_Logs/Raw" # Change this when finished with Arduino
+avgfolder = "Arduino_Logs/Average" # Change this when finished with Arduino
+os.makedirs(rawfolder, exist_ok=True)
+os.makedirs(avgfolder, exist_ok=True)
+
+sample_buffer = []
+
+#Filenames
+def get_raw_filename():
+    now = datetime.now()
+    filename = now.strftime("ArduinoRaw_%Y%m%d_%H00.csv") # Change this when finished with Arduino
+    return os.path.join(rawfolder, filename)
+
+def get_avg_filename():
+    now = datetime.now()
+    filename = now.strftime("ArduinoAverage_%Y%m%d_%H00.csv") # Change this when finished with Arduino
+    return os.path.join(avgfolder, filename)
+
+#CSV creation
+def create_file(filename):
+    if not os.path.exists(filename):
+        print(f"Creating new file: {filename}")
+        with open(filename, "w") as f:
+            f.write('"TOA5","CR3000","CR3000","1564","CR3000.Std.29","CPU:Summit3.CR3","18522","AllData"\n')
+            f.write('"TIMESTAMP","RECORD","Batt_Volt_Avg","Pulse_Tot","Pulse_2_Tot","Pulse_3_Tot","CNR1_Avg(1)","CNR1_Avg(2)","CNR1_Avg(3)","CNR1_Avg(4)","CNR1_PRT_Avg","P_Avg","T_Avg(1)","T_Avg(2)","CellCo_15"\n')
+            f.write('"TS","RN","Volts","Counts","Counts","Counts","mV","mV","mV","mV","mV","mV","mV","mV",""\n')
+            f.write('"","","Avg","Tot","Tot","Tot","Avg","Avg","Avg","Avg","Avg","Avg","Avg","Avg","Smp"\n')
+
+#5-minute intervals
+def write_five_min_avg():
+    global sample_buffer
+    if len(sample_buffer)==0:
+        return
+    column_count = len(sample_buffer[0])
+    avg_row = []
+    avg_row.append(sample_buffer[-1][0])
+    avg_row.append(sample_buffer[-1][1])
+    for col in range(2, column_count):
+        values = []
+        for row in sample_buffer:
+            try:
+                values.append(float(row[col]))
+            except:
+                pass
+        if len(values) > 0:
+            avg_row.append(round(sum(values)/len(values), 3))
+        else:
+            avg_row.append("")
+    filename = get_avg_filename()
+    create_file(filename)
+    with open(filename, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(avg_row)
+    print("5-minute average written")
+    sample_buffer = []
+
+#Serial
+ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1.0)
+time.sleep(3)
+ser.reset_input_buffer()
+print("Serial OK")
+
+#Timer for 5-minute averages
+last_avg_time = time.time()
+
+#Main loop
+try:
+    while True:
+        time.sleep(0.01)
+       
+        sendemail(get_avg_filename())
+       
+        if ser.in_waiting > 0:
+            line = ser.readline().decode('utf-8').rstrip()
+            if line == "":
+                continue
+            print(line)
+           
+            raw_file = get_raw_filename()
+            create_file(raw_file)
+            with open(raw_file, "a") as csvfile:
+                csvfile.write(line + "\n")
+           
+            cleaned = line.replace('""', '')
+            fields = cleaned.split(",")
+           
+            if len(fields) < 15:
+                print(f"Corrupt record skipped: {line}")
+               
+                with open("/home/ssws/GitSample/SSWS-RPi/corrupt_records.log", "a") as f:
+                    f.write(f"{datetime.now()} : {line}\n")
+           
+                continue
+           
+            sample_buffer.append(fields)
+           
+            if time.time() - last_avg_time >= 300:
+                write_five_min_avg()
+                last_avg_time = time.time()
+           
+except KeyboardInterrupt:
+    print("Close Serial communication")
+finally:
+    ser.close()
