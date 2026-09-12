@@ -37,4 +37,4 @@ Automated analysis
 
 ↓
 
-Daily summary plo
+Daily summary plot
