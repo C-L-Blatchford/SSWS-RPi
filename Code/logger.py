@@ -15,7 +15,6 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 import shutil
-#import smtpfile
 import subprocess
 
 #Moving CSV file
@@ -34,19 +33,25 @@ def git_upload():
     print("Git Uploading...")
     for attempt in range(5):
         try:
+            subprocess.run(["git", "-C", repo, "add", "."], check=True)
+            subprocess.run(["git", "-C", repo, "commit", "-m", f"Auto upload {datetime.now()}"], check=False)
+
             subprocess.run(["git", "-C", repo, "fetch", "origin"], check=True)
             subprocess.run(["git", "-C", repo, "pull", "--rebase", "origin", "main"], check=True)
 
-            subprocess.run(["git", "-C", repo, "add", "."], check=True)
-#            subprocess.run(["git", "-C", repo, "status"])
-            subprocess.run(["git", "-C", repo, "commit", "-m", f"Auto upload {datetime.now()}"], check=False)
-
-            subprocess.run(["git", "-C", repo, "push"], check=True)
+            subprocess.run(["git", "-C", repo, "push", "origin", "main"], check=True)
             print("Git Upload Successful")
             return
-        except Exception as e:
-            print(f"Git Upload Attempt {attempt+1} Failed: {e}")
+        except subprocess.CalledProcessError as e:
+            print(f"Git Upload Attempt {attempt + 1} Failed\n"
+                  f"Command: {e.cmd}\n"
+                  f"Return code: {e.returncode}")
             time.sleep(60)
+        except Exception as e:
+            print(f"Git Upload Attempt {attempt + 1} Failed: {e}")
+            time.sleep(60)
+    print("Git Upload Failed After 5 Attempts")
+            
 
 #Sending Email w/Attachments Code <-- GitHub uploads make this redundant
 fromaddr = "sswsrpi@gmail.com"
