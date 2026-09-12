@@ -5,7 +5,7 @@ After=network.target
 [Service]
 User=ssws
 WorkingDirectory=/home/ssws
-ExecStart=/usr/bin/python3 /home/ssws/logger.py
+ExecStart=/usr/bin/python3 /home/ssws/GitSample/SSWS-RPi/Code/logger.py
 
 Restart=always
 RestartSec=10
