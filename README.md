@@ -34,5 +34,7 @@ GitHub upload
 ↓
 
 Automated analysis
-#  ↓
-#  Daily summary plots
+
+↓
+
+Daily summary plo
