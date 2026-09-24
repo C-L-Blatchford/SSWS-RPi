@@ -162,7 +162,7 @@ def write_five_min_avg():
     sample_buffer = []
 
 #Serial
-ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1.0)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1.0)
 time.sleep(3)
 ser.reset_input_buffer()
 print("Serial OK")
